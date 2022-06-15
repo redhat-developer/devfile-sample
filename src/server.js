@@ -62,7 +62,7 @@ app.get('*', (req, res) => {
 // Listen and serve.
 let PORT = process.env.PORT || 3000;
 if (process.argv.length == 3 && process.argv[2] == "console") {
-  PORT = 3001
+  PORT = 3000
 }
 server.listen(PORT, () => {
   console.log(`App started on PORT ${PORT}`);
