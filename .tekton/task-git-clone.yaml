@@ -23,12 +23,5 @@ spec:
         cd /workspace/source
         git clone --depth=1 --branch=$(params.github-repo-revision) $(params.github-repo-url) /workspace/source
         pwd && ls -la 
-    - name: list-files
-      image: docker.io/bitnami/git:latest
-      script: |
-        #!/usr/bin/env bash
-        cd /workspace/source
-        pwd && ls -la
         cd ./src
         pwd && ls -la
-      
