@@ -1,0 +1,33 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: application-pipeline
+spec:
+  resources:
+    - name: git-source
+      type: git
+  params:
+    - name: pathToContext
+      description: The path to the build context, used by Kaniko - within the workspace
+      default: .
+
+  tasks:
+  # ⬇️ First task is to clone repo from github into the workspace
+  - name: clone-sources
+    params:
+      - name: github-repo-url
+        value: $(params.github-repo-url)
+      - name: github-repo-revision
+        value: $(params.github-repo-revision)
+      - name: pathToContext
+        value: $(params.pathToContext)
+    taskRef:
+       kind: Task
+       name: git-clone
+    workspaces:
+      - name: output
+        workspace: source
+
+  # 🔁⬆️ Second task is to build the image and push it to the registry      
+
+  # Third task is to deploy the image to the cluster        
