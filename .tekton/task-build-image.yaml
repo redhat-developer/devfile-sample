@@ -1,0 +1,48 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: task-build-push-image
+spec:
+  description: "Build and push the image to the registry"
+  workspaces:
+    - name: source
+      description: "The source code will be cloned into this workspace"
+      mountPath: /workspace/source
+  params:
+    - name: dockerio-username
+      description: "The username of the dockerio account"
+      default: "username"
+    - name: dockerio-password
+      description: "The password of the dockerio account"
+      default: "supersecret"
+    - name: image-name
+      description: "The name of the image to build"
+      default: "okd-tekton-workshop"
+    - name: image-tag
+      description: "The tag of the image to build"
+      default: "latest"
+    - name: pathToContext
+      description: "The path to the build context"
+      default: ./src
+  steps:
+    - name: check-source
+      image: alpine:latest
+      script: |
+        #!/usr/bin/env bash
+        cd /workspace/source
+        ls -la
+        cd 
+
+    - name: build-image
+      image: docker/docker:latest
+      script: |
+        #!/usr/bin/env bash
+        docker login -u $(params.dockerio-username) -p $(params.dockerio-password) docker.io
+        docker build -t $(params.image-name) /workspace/source
+
+    - name: push-image
+      image: docker/docker:latest
+      script: |
+        #!/usr/bin/env bash
+        docker login -u $(params.dockerio-username) -p $(params.dockerio-password) docker.io
+        docker push $(params.image-name):$(params.image-tag)
