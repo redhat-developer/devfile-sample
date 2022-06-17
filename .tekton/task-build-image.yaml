@@ -9,16 +9,19 @@ spec:
       description: "The source code will be cloned into this workspace"
       mountPath: /workspace/source
   params:
+    - name: pathToDockerfile
+      description: "The path to the Dockerfile"
+      default: "./Dockerfile"
     - name: dockerio-username
       description: "The username of the dockerio account"
-      default: "username"
+      default: "pewpewtron"
     - name: dockerio-password
       description: "The password of the dockerio account"
-      default: "supersecret"
-    - name: image-name
+      default: "8585d7e9-13d5-4e75-bf9e-7e9679f94721"
+    - name: imageUrl
       description: "The name of the image to build"
-      default: "okd-tekton-workshop"
-    - name: image-tag
+      default: "pewpewtron/okd-tekton-workshop"
+    - name: imageTag
       description: "The tag of the image to build"
       default: "latest"
     - name: pathToContext
@@ -26,23 +29,26 @@ spec:
       default: ./src
   steps:
     - name: check-source
-      image: alpine:latest
+      image: ubuntu:latest
+      workingDir: /workspace/source
       script: |
         #!/usr/bin/env bash
-        cd /workspace/source
+        echo $(workspaces.source.path)/$(inputs.params.pathToContext)/$(inputs.params.pathToDockerfile)
         ls -la
-        cd 
+        cd $(params.pathToContext)
+        ls -la
+        pwd
+        cat $(workspaces.source.path)/$(inputs.params.pathToContext)/$(inputs.params.pathToDockerfile)
 
-    - name: build-image
-      image: docker/docker:latest
-      script: |
-        #!/usr/bin/env bash
-        docker login -u $(params.dockerio-username) -p $(params.dockerio-password) docker.io
-        docker build -t $(params.image-name) /workspace/source
-
-    - name: push-image
-      image: docker/docker:latest
-      script: |
-        #!/usr/bin/env bash
-        docker login -u $(params.dockerio-username) -p $(params.dockerio-password) docker.io
-        docker push $(params.image-name):$(params.image-tag)
+    - name: build-push-image
+      image: gcr.io/kaniko-project/executor
+      command:
+        - /kaniko/executor
+      args:
+        - "--context=$(workspace.source.path)/$(inputs.params.pathToContext)"
+        - "--dockerfile=$(inputs.params.pathToDockerfile)"
+        - "--destination=$(inputs.params.imageUrl):$(inputs.params.imageTag)"
+        - "--insecure"
+        - "--insecure-pull"
+        - "--skip-tls-verify"
+        - "--skip-tls-verify-pull"
