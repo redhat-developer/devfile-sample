@@ -7,4 +7,4 @@ spec:
     app: okd-tekton-workshop
   ports:
     - port: 8080
-      targetPort: 3000
+      targetPort: 3001
