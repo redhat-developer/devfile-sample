@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: task-deploy
+spec:
+  description: "Deploy the image to the cluster"
+  workspaces:
+    - name: source
+      description: "The source code will be cloned into this workspace"
+      mountPath: /workspace/source
+  steps:
+    - name: check source
+      image: alpine:latest
+      workingDir: /workspace/source
+      script: |
+        #!/usr/bin/bash
+        pwd
+        ls -la
+    - name: deploy
+      image: quay.io/openshift/origin-cli
+      script: |
+        #!/usr/bin/env bash
+        oc login -u $(inputs.params.dockerio-username) -p $(inputs.params.dockerio-password) $(inputs.params.cluster-url)
+        oc new-app $(inputs.params.imageUrl):$(inputs.params.imageTag)
