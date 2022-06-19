@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: okd-tekton-workshop
+spec:
+  selector:
+    matchLabels:
+      app: okd-tekton-workshop
+  template:
+    metadata:
+      labels:
+        app: okd-tekton-workshop
+    spec:
+      containers:
+      - name: okd-tekton-workshop
+        image: pewpewtron/okd-tekton-workshop:latest
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 3000
