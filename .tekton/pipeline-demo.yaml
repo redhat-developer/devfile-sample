@@ -9,46 +9,69 @@ spec:
       description: "The source code will be cloned into this workspace"
       mountPath: /workspace/source
   params:
-    - name: github-repo-url
-      description: "The URL of the github repo to clone"
+    - name: REPO-URL
+      description: "The URL of the repo to clone"
       default: "https://github.com/pewpewtron/okd-tekton-workshop"
-    - name: github-repo-revision
+    - name: REPO-REVISION
       description: "The revision of the github repo to clone"
       default: "main"
+    - name: IMAGE
+      description: "The name of the image to build"
+      default: "pewpewtron/okd-tekton-workshop"
+    - name: DOCKERFILE
+      description: "The path to the Dockerfile"
+      default: "./Dockerfile"
+    - name: CONTEXT
+      description: "The path to the build context"
+      default: ./src
+    - name: BUILD_EXTRA_ARGS
+      description: "Additional arguments to pass to the build"
+      default: ""
+    - name: PUSH_EXTRA_ARGS
+      description: "Additional arguments to pass to the push"
+      default: ""
     
   tasks:
   # ⬇️ First task is to clone repo from github into the workspace
   - name: clone-sources
-    params:
-      - name: github-repo-url
-        value: $(params.github-repo-url)
-      - name: github-repo-revision
-        value: $(params.github-repo-revision)
     taskRef:
        kind: Task
        name: git-clone
+       metadata:
+        name: Clone Source
+        description: "Clone the github repo into the workspace"
+    params:
+      - name: REPO-URL
+        value: $(params.REPO-URL)
+      - name: REPO-REVISION
+        value: $(params.REPO-REVISION)
     workspaces:
-      - name: output
+      - name: source
         workspace: source
 
   # 🔁⬆️ Second task is to build the image and push it to the registry
   - name: build-push-image
-    params:
-      - name: image
-        value: $(params.image) 
-      - name: dockerfile
-        value: $(params.dockerfile)
-      - name: context
-        value: $(workspaces.source.path)/$(params.context)/
-      - name: build-extra-args
-        value: ""
-      - name: push-extra-args
-        value: ""
     taskRef:
-        kind: Task
-        name: docker-build
+      kind: ClusterTask
+      name: buildah
+      metadata:
+        name: Build Container Image
+        description: "Build and push the image to the registry"
+    runAfter:
+      - clone-sources
+    params:
+      - name: IMAGE
+        value: $(inputs.params.IMAGE)
+      - name: DOCKERFILE
+        value: $(inputs.params.DOCKERFILE)
+      - name: CONTEXT
+        value: $(inputs.params.CONTEXT)
+      - name: BUILD_EXTRA_ARGS
+        value: $(inputs.params.BUILD_EXTRA_ARGS)
+      - name: PUSH_EXTRA_ARGS
+        value: $(inputs.params.PUSH_EXTRA_ARGS)
     workspaces:
-      - name: output
+      - name: source
         workspace: source
 
   # Third task is to deploy the image to the cluster        
