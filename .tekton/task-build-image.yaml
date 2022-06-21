@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: task-build-push-image
@@ -23,13 +23,10 @@ spec:
       default: "src"
     - name: BUILD_EXTRA_ARGS
       description: "Additional arguments to pass to the build"
-      default: ""
+      default: " "
     - name: PUSH_EXTRA_ARGS
       description: "Additional arguments to pass to the push"
-      default: ""
-    - name: BUILDER_IMAGE
-      description: "Name of the builder image to use"
-      default: "registry.redhat.io/rhel8/buildah@sha256:99cae35f40c7ec050fed3765b2b27e0b8bbea2aa2da7c16408e2ca13c60ff8ee"
+      default: " "
     - name: STORAGE_DRIVER
       description: "Set buildah storage driver"
       default: "vfs"  
@@ -45,14 +42,14 @@ spec:
       workingDir: /workspace/source
       script: |
         #!/usr/bin/env bash
-        echo $(workspaces.source.path)/$(inputs.params.CONTEXT)/$(inputs.params.DOCKERFILE)
+        echo $(workspaces.source.path)/$(params.CONTEXT)/$(params.DOCKERFILE)
         ls -la
-        cd /$(inputs.params.CONTEXT)
+        cd /$(params.CONTEXT)
         ls -la
         pwd
-        cat $(workspaces.source.path)/$(inputs.params.CONTEXT)/$(inputs.params.DOCKERFILE)
+        cat $(workspaces.source.path)/$(params.CONTEXT)/$(params.DOCKERFILE)
     - name: build-image
-      image: $(inputs.params.BUILDER_IMAGE)
+      image: registry.redhat.io/rhel8/buildah@sha256:99cae35f40c7ec050fed3765b2b27e0b8bbea2aa2da7c16408e2ca13c60ff8ee
       resources: {}
       script: |
         #!/usr/bin/env bash
@@ -65,7 +62,7 @@ spec:
         name: varlibcontainers
       workingDir: $(workspaces.source.path)
     - name: push-image
-      image: $(inputs.params.BUILDER_IMAGE)
+      image: registry.redhat.io/rhel8/buildah@sha256:99cae35f40c7ec050fed3765b2b27e0b8bbea2aa2da7c16408e2ca13c60ff8ee
       resources: {}
       script: |
         #!/usr/bin/env bash
