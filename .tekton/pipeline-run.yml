@@ -1,0 +1,34 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: tekton-pipeline-demo
+spec:
+  params:
+    - name: REPO-URL
+      value: 'https://github.com/pewpewtron/okd-tekton-workshop'
+    - name: REPO-REVISION
+      value: main
+    - name: IMAGE
+      value: pewpewtron/okd-tekton-workshop
+    - name: DOCKERFILE
+      value: Dockerfile
+    - name: CONTEXT
+      value: src
+    - name: BUILD_EXTRA_ARGS
+      value: ' '
+    - name: PUSH_EXTRA_ARGS
+      value: ' '
+    - name: STORAGE_DRIVER
+      value: vfs
+    - name: TLSVERIFY
+      value: 'true'
+    - name: FORMAT
+      value: oci
+  resources: []
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: pipeline-pvc
+  pipelineRef:
+    name: pipeline-demo
+  serviceAccountName: build-bot

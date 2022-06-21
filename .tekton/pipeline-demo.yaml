@@ -1,45 +1,48 @@
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   name: pipeline-demo
-  description: "A pipeline that clones a github repo and runs a build and deploy to openshift cluster"
 spec:
   workspaces:
     - name: source
       description: "The source code will be cloned into this workspace"
-      mountPath: /workspace/source
   params:
     - name: REPO-URL
       description: "The URL of the repo to clone"
       default: "https://github.com/pewpewtron/okd-tekton-workshop"
     - name: REPO-REVISION
-      description: "The revision of the github repo to clone"
+      description: "The branch of the github repo to clone"
       default: "main"
     - name: IMAGE
-      description: "The name of the image to build"
+      description: "Name of the image to build"
       default: "pewpewtron/okd-tekton-workshop"
     - name: DOCKERFILE
-      description: "The path to the Dockerfile"
-      default: "./Dockerfile"
+      description: "Path to the Dockerfile"
+      default: "Dockerfile"
     - name: CONTEXT
-      description: "The path to the build context"
-      default: ./src
+      description: "Path to the build context"
+      default: "src"
     - name: BUILD_EXTRA_ARGS
       description: "Additional arguments to pass to the build"
-      default: ""
+      default: " "
     - name: PUSH_EXTRA_ARGS
       description: "Additional arguments to pass to the push"
-      default: ""
-    
+      default: " "
+    - name: STORAGE_DRIVER
+      description: "Set buildah storage driver"
+      default: "vfs"  
+    - name: TLSVERIFY
+      description: "Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)"
+      default: "true"
+    - name: FORMAT
+      description: "The format of the built container, oci or docker"
+      default: "oci"
   tasks:
   # ⬇️ First task is to clone repo from github into the workspace
   - name: clone-sources
     taskRef:
        kind: Task
-       name: git-clone
-       metadata:
-        name: Clone Source
-        description: "Clone the github repo into the workspace"
+       name: task-git-clone
     params:
       - name: REPO-URL
         value: $(params.REPO-URL)
@@ -52,24 +55,27 @@ spec:
   # 🔁⬆️ Second task is to build the image and push it to the registry
   - name: build-push-image
     taskRef:
-      kind: ClusterTask
-      name: buildah
-      metadata:
-        name: Build Container Image
-        description: "Build and push the image to the registry"
+      kind: Task
+      name: task-build-push-image
     runAfter:
       - clone-sources
     params:
       - name: IMAGE
-        value: $(inputs.params.IMAGE)
+        value: $(params.IMAGE)
       - name: DOCKERFILE
-        value: $(inputs.params.DOCKERFILE)
+        value: $(params.DOCKERFILE)
       - name: CONTEXT
-        value: $(inputs.params.CONTEXT)
+        value: $(params.CONTEXT)
       - name: BUILD_EXTRA_ARGS
-        value: $(inputs.params.BUILD_EXTRA_ARGS)
+        value: $(params.BUILD_EXTRA_ARGS)
       - name: PUSH_EXTRA_ARGS
-        value: $(inputs.params.PUSH_EXTRA_ARGS)
+        value: $(params.PUSH_EXTRA_ARGS)
+      - name: STORAGE_DRIVER
+        value: $(params.STORAGE_DRIVER)
+      - name: TLSVERIFY
+        value: $(params.TLSVERIFY)
+      - name: FORMAT
+        value: $(params.FORMAT)
     workspaces:
       - name: source
         workspace: source
