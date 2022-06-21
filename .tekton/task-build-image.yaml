@@ -8,47 +8,77 @@ spec:
     - name: source
       description: "The source code will be cloned into this workspace"
       mountPath: /workspace/source
+  volumes:
+    - name: varlibcontainers
+      emptyDir: {}
   params:
-    - name: pathToDockerfile
-      description: "The path to the Dockerfile"
-      default: "./Dockerfile"
-    - name: dockerio-username
-      description: "The username of the dockerio account"
-      default: "pewpewtron"
-    - name: dockerio-password
-      description: "The password of the dockerio account"
-      default: "8585d7e9-13d5-4e75-bf9e-7e9679f94721"
-    - name: imageUrl
-      description: "The name of the image to build"
+    - name: IMAGE
+      description: "Name of the image to build"
       default: "pewpewtron/okd-tekton-workshop"
-    - name: imageTag
-      description: "The tag of the image to build"
-      default: "latest"
-    - name: pathToContext
-      description: "The path to the build context"
-      default: ./src
+    - name: DOCKERFILE
+      description: "Path to the Dockerfile"
+      default: "Dockerfile"
+    - name: CONTEXT
+      description: "Path to the build context"
+      default: "src"
+    - name: BUILD_EXTRA_ARGS
+      description: "Additional arguments to pass to the build"
+      default: ""
+    - name: PUSH_EXTRA_ARGS
+      description: "Additional arguments to pass to the push"
+      default: ""
+    - name: BUILDER_IMAGE
+      description: "Name of the builder image to use"
+      default: "registry.redhat.io/rhel8/buildah@sha256:99cae35f40c7ec050fed3765b2b27e0b8bbea2aa2da7c16408e2ca13c60ff8ee"
+    - name: STORAGE_DRIVER
+      description: "Set buildah storage driver"
+      default: "vfs"  
+    - name: TLSVERIFY
+      description: "Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)"
+      default: "true"
+    - name: FORMAT
+      description: "The format of the built container, oci or docker"
+      default: "oci"
   steps:
     - name: check-source
       image: ubuntu:latest
       workingDir: /workspace/source
       script: |
         #!/usr/bin/env bash
-        echo $(workspaces.source.path)/$(inputs.params.pathToContext)/$(inputs.params.pathToDockerfile)
+        echo $(workspaces.source.path)/$(inputs.params.CONTEXT)/$(inputs.params.DOCKERFILE)
         ls -la
-        cd $(params.pathToContext)
+        cd /$(inputs.params.CONTEXT)
         ls -la
         pwd
-        cat $(workspaces.source.path)/$(inputs.params.pathToContext)/$(inputs.params.pathToDockerfile)
-
-    - name: build-push-image
-      image: gcr.io/kaniko-project/executor
-      command:
-        - /kaniko/executor
-      args:
-        - "--context=$(workspace.source.path)/$(inputs.params.pathToContext)"
-        - "--dockerfile=$(inputs.params.pathToDockerfile)"
-        - "--destination=$(inputs.params.imageUrl):$(inputs.params.imageTag)"
-        - "--insecure"
-        - "--insecure-pull"
-        - "--skip-tls-verify"
-        - "--skip-tls-verify-pull"
+        cat $(workspaces.source.path)/$(inputs.params.CONTEXT)/$(inputs.params.DOCKERFILE)
+    - name: build-image
+      image: $(inputs.params.BUILDER_IMAGE)
+      resources: {}
+      script: |
+        #!/usr/bin/env bash
+        buildah --storage-driver=$(params.STORAGE_DRIVER) bud \
+          $(params.BUILD_EXTRA_ARGS) --format=$(params.FORMAT) \
+          --tls-verify=$(params.TLSVERIFY) --no-cache \
+          -f $(params.DOCKERFILE) -t $(params.IMAGE) $(params.CONTEXT)
+      volumeMounts:
+      - mountPath: /var/lib/containers
+        name: varlibcontainers
+      workingDir: $(workspaces.source.path)
+    - name: push-image
+      image: $(inputs.params.BUILDER_IMAGE)
+      resources: {}
+      script: |
+        #!/usr/bin/env bash
+        buildah --storage-driver=$(params.STORAGE_DRIVER) push \
+          $(params.PUSH_EXTRA_ARGS) --tls-verify=$(params.TLSVERIFY) \
+          --digestfile $(workspaces.source.path)/image-digest $(params.IMAGE) \
+          docker://$(params.IMAGE)
+      volumeMounts:
+      - mountPath: /var/lib/containers
+        name: varlibcontainers
+      workingDir: $(workspaces.source.path)
+    - name: digest-to-results
+      image: ubuntu:latest
+      script: |
+        #!/usr/bin/env bash
+        cat $(workspaces.source.path)/image-digest | tee /tekton/results/IMAGE_DIGEST 
