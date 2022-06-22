@@ -16,6 +16,14 @@ spec:
       description: "The revision of the github repo to clone"
       default: "main"
   steps:
+    - name: clean-source
+      image: ubuntu:latest
+      script: |
+        #!/usr/bin/env bash
+        cd $(workspaces.source.path)
+        pwd && ls -la
+        rm -rf $(workspaces.source.path)/{*,.*}
+        pwd && ls -la
     - name: git-clone
       image: docker.io/bitnami/git:latest
       script: |
