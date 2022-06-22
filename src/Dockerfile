@@ -4,6 +4,6 @@ WORKDIR /usr/src/app
 COPY . .
 RUN npm install
 
-EXPOSE 3001
+EXPOSE 3000
 USER 1001
-CMD [ "npm", "run", "console" ]
+CMD [ "node", "server.js" ]

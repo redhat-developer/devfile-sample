@@ -1,0 +1,6 @@
+{
+    "yaml.schemas": {
+        "kubernetes://schema/apps/v1@deployment": "file:///c%3A/Users/devti/OneDrive%20-%20Inovasi%20Informatika%20Indonesia/Project/Workshop%20OKD/okd-tekton-workshop/deploy/deploy.yaml",
+        "tekton:/c%3A/Users/devti/OneDrive%20-%20Inovasi%20Informatika%20Indonesia/Project/Workshop%20OKD/okd-tekton-workshop/.tekton/pipeline-demo.yaml": "file:///c%3A/Users/devti/OneDrive%20-%20Inovasi%20Informatika%20Indonesia/Project/Workshop%20OKD/okd-tekton-workshop/.tekton/pipeline-demo.yaml"
+    }
+}
