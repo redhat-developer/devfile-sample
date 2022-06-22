@@ -1,0 +1,83 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: pipeline-demo
+spec:
+  workspaces:
+    - name: source
+      description: "The source code will be cloned into this workspace"
+  params:
+    - name: REPO-URL
+      description: "The URL of the repo to clone"
+      default: "https://github.com/pewpewtron/okd-tekton-workshop"
+    - name: REPO-REVISION
+      description: "The branch of the github repo to clone"
+      default: "main"
+    - name: IMAGE
+      description: "Name of the image to build"
+      default: "pewpewtron/okd-tekton-workshop"
+    - name: DOCKERFILE
+      description: "Path to the Dockerfile"
+      default: "Dockerfile"
+    - name: CONTEXT
+      description: "Path to the build context"
+      default: "src"
+    - name: BUILD_EXTRA_ARGS
+      description: "Additional arguments to pass to the build"
+      default: " "
+    - name: PUSH_EXTRA_ARGS
+      description: "Additional arguments to pass to the push"
+      default: " "
+    - name: STORAGE_DRIVER
+      description: "Set buildah storage driver"
+      default: "vfs"  
+    - name: TLSVERIFY
+      description: "Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)"
+      default: "true"
+    - name: FORMAT
+      description: "The format of the built container, oci or docker"
+      default: "oci"
+  tasks:
+  # ⬇️ First task is to clone repo from github into the workspace
+  - name: clone-sources
+    taskRef:
+       kind: Task
+       name: task-git-clone
+    params:
+      - name: REPO-URL
+        value: $(params.REPO-URL)
+      - name: REPO-REVISION
+        value: $(params.REPO-REVISION)
+    workspaces:
+      - name: source
+        workspace: source
+
+  # 🔁⬆️ Second task is to build the image and push it to the registry
+  - name: build-push-image
+    taskRef:
+      kind: Task
+      name: task-build-push-image
+    runAfter:
+      - clone-sources
+    params:
+      - name: IMAGE
+        value: $(params.IMAGE)
+      - name: DOCKERFILE
+        value: $(params.DOCKERFILE)
+      - name: CONTEXT
+        value: $(params.CONTEXT)
+      - name: BUILD_EXTRA_ARGS
+        value: $(params.BUILD_EXTRA_ARGS)
+      - name: PUSH_EXTRA_ARGS
+        value: $(params.PUSH_EXTRA_ARGS)
+      - name: STORAGE_DRIVER
+        value: $(params.STORAGE_DRIVER)
+      - name: TLSVERIFY
+        value: $(params.TLSVERIFY)
+      - name: FORMAT
+        value: $(params.FORMAT)
+    workspaces:
+      - name: source
+        workspace: source
+
+  # Third task is to deploy the image to the cluster        

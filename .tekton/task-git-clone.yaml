@@ -1,0 +1,35 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: task-git-clone
+spec:
+  description: "Clone the source code from github into the workspace"
+  workspaces:
+    - name: source
+      description: "The source code will be cloned into this workspace"
+      mountPath: /workspace/source
+  params:
+    - name: REPO-URL
+      description: "The URL of the github repo to clone"
+      default: "https://github.com/pewpewtron/okd-tekton-workshop"
+    - name: REPO-REVISION
+      description: "The revision of the github repo to clone"
+      default: "main"
+  steps:
+    - name: clean-source
+      image: ubuntu:latest
+      script: |
+        #!/usr/bin/env bash
+        cd $(workspaces.source.path)
+        pwd && ls -la
+        rm -rf $(workspaces.source.path)/{*,.*}
+        pwd && ls -la
+    - name: git-clone
+      image: docker.io/bitnami/git:latest
+      script: |
+        #!/usr/bin/env bash
+        cd /workspace/source
+        git clone --depth=1 --branch=$(params.REPO-REVISION) $(params.REPO-URL) /workspace/source
+        pwd && ls -la 
+        cd ./src
+        pwd && ls -la
