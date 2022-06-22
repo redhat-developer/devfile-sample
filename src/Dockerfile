@@ -5,4 +5,5 @@ COPY . .
 RUN npm install
 
 EXPOSE 3001
+USER 1001
 CMD [ "npm", "run", "console" ]
