@@ -24,6 +24,10 @@ spec:
       value: 'true'
     - name: FORMAT
       value: oci
+    - name: MANIFEST
+      value: deploy
+    - name: DEPLOY
+      value: deploy.yaml
   resources: []
   workspaces:
     - name: source

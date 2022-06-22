@@ -37,6 +37,12 @@ spec:
     - name: FORMAT
       description: "The format of the built container, oci or docker"
       default: "oci"
+    - name: MANIFEST
+      description: "Directory where the mainfest file for deployment"
+      default: "deploy"
+    - name: DEPLOY
+      description: "Path to the deployment yaml file"
+      default: "deploy.yaml"
   tasks:
   # ⬇️ First task is to clone repo from github into the workspace
   - name: clone-sources
@@ -81,3 +87,18 @@ spec:
         workspace: source
 
   # Third task is to deploy the image to the cluster        
+  - name: deploy-to-cluster
+    taskRef:
+      kind: Task
+      name: task-deploy
+    runAfter:
+      - clone-sources
+      - build-push-image
+    params:
+      - name: MANIFEST
+        value: "$(params.MANIFEST)"
+      - name: DEPLOY
+        value: "$(params.DEPLOY)"
+    workspaces:
+      - name: source
+        workspace: source
