@@ -10,4 +10,5 @@ RUN groupadd -r swuser -g 433 && \
 useradd -u 431 -r -g swuser -d /usr/src/app/ -s /sbin/nologin -c "Docker image user" swuser && \
 chown -R swuser:swuser /usr/src/app/
 
+USER 431
 CMD [ "npm", "run", "console" ]
