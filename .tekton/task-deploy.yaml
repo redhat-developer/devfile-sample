@@ -8,17 +8,24 @@ spec:
     - name: source
       description: "The source code will be cloned into this workspace"
       mountPath: /workspace/source
+  params:
+    - name: MANIFEST
+      description: "Directory where the mainfest file for deployment"
+      default: "deploy"
   steps:
-    - name: check source
-      image: alpine:latest
+    - name: check-source
+      image: ubuntu:latest
       workingDir: /workspace/source
       script: |
-        #!/usr/bin/bash
+        #!/usr/bin/env bash
         pwd
+        ls -la
+        cd $(workspaces.source.path)/$(params.MANIFEST)/
         ls -la
     - name: deploy
       image: quay.io/openshift/origin-cli
       script: |
         #!/usr/bin/env bash
-        oc login -u $(inputs.params.dockerio-username) -p $(inputs.params.dockerio-password) $(inputs.params.cluster-url)
-        oc new-app $(inputs.params.imageUrl):$(inputs.params.imageTag)
+        oc whoami
+        oc get project
+        oc apply -f 
