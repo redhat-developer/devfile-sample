@@ -12,6 +12,9 @@ spec:
     - name: MANIFEST
       description: "Directory where the mainfest file for deployment"
       default: "deploy"
+    - name: DEPLOY
+      description: "Path to the deployment yaml file"
+      default: "deploy.yaml"
   steps:
     - name: check-source
       image: ubuntu:latest
@@ -28,4 +31,13 @@ spec:
         #!/usr/bin/env bash
         oc whoami
         oc get project
-        oc apply -f 
+        oc apply -f $(workspaces.source.path)/$(params.MANIFEST)/$(params.DEPLOY)
+    - name: check-deploy
+      image: quay.io/openshift/origin-cli
+      script: |
+        #!/usr/bin/env bash
+        oc get pod
+        echo ===========================
+        oc get service
+        echo ===========================
+        oc get route
